@@ -1,0 +1,114 @@
+class MoviesController < ApplicationController
+  
+  def initialize
+    @all_ratings = ['G','PG','PG-13','R']
+    @select_rating_string = ""
+    @sort_type = ""
+    @selected_ratings = {'G' => 'G', 'PG' => 'PG', 'PG-13' => 'PG-13', 'R' => 'R']
+    super
+  end
+  
+  def show
+    id = params[:id] # retrieve movie ID from URI route
+    @movie = Movie.find(id) # look up movie by unique ID
+    # will render app/views/movies/show.<extension> by default
+  end
+  
+  def index
+    @param = params
+    if (params[:ratings] != nil)
+      @selected_ratings.clear
+      @all_ratings.each{ |x| if (params[:ratings]["#{x}"] != nil)
+                        @selected_ratings.store(x, x)
+                        #@selected_ratings.push(x)                        
+                         if @select_rating_string != ""
+                            @select_rating_string = @select_rating_string + " or "
+                         end
+                            @select_rating_string = @select_rating_string + "rating=\'#{x}\'"
+                         #else
+                         #   @selected_ratings[x] = false
+                         
+                     end
+                     }
+    else
+    @selected_ratings.each{ |x|
+                      if @select_rating_string != ""
+                          @select_rating_string = @select_rating_string + " or "
+                      end
+                          @select_rating_string = @select_rating_string + "rating=\'#{x[0]}\'"
+                      #|pair| if (pair[1] == true)
+                      #if @select_rating_string != ""
+                          #@select_rating_string = @select_rating_string + " or "
+                      #end
+                          #@select_rating_string = @select_rating_string + "rating=\'#{pair[0]}\'"
+                     #end
+                     }
+    end
+    
+    if (params[:sort] != nil)
+      if (params[:sort] == "title")
+        @sort_type = "title"
+        @title = "hilite"
+        @date = ""
+      elsif (params[:sort] == "release_date")
+        @sort_type = "release_date"
+        @date = "hilite"
+        @title = ""
+      else
+        @title = ""
+        @date = ""
+      end
+      if (@sort_type != "")
+        @movies = Movie.where(@select_rating_string).order(@sort_type + " ASC")
+      else
+        @movies = Movie.where(@select_rating_string)
+      end
+    else
+      if (@sort_type == "")
+        if (@sort_type == "title")
+          @title = "hilite"
+        elsif (@sort_type == "release_date")
+          @date = "hilite"
+        end
+        @movies = Movie.where(@select_rating_string)
+      else
+        if (@sort_type != "")
+          @movies = Movie.where(@select_rating_string).order(@sort_type + "ASC")
+        else
+          @movies = Movie.where(@select_rating_string)
+        end
+        @title = ""
+        @date = ""
+      end
+    end
+  end
+
+  def new
+    # default: render 'new' template
+  end
+
+  def create
+    @movie = Movie.create!(params[:movie])
+    flash[:notice] = "#{@movie.title} was successfully created."
+    redirect_to movies_path
+  end
+
+  def edit
+    @movie = Movie.find params[:id]
+  end
+
+  def update
+    @movie = Movie.find params[:id]
+    @movie.update_attributes!(params[:movie])
+    flash[:notice] = "#{@movie.title} was successfully updated."
+    redirect_to movie_path(@movie)
+  end
+
+  def destroy
+    @movie = Movie.find(params[:id])
+    @movie.destroy
+    flash[:notice] = "Movie '#{@movie.title}' deleted."
+    redirect_to movies_path
+  end
+
+end
